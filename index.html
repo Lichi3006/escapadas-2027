@@ -179,6 +179,13 @@ h1.dname{font-family:var(--font-display);font-weight:900;text-transform:uppercas
 .map-side{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0;max-height:600px}
 .map-side h3{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .map-side select{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;font:inherit;font-size:14px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.ocard{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ocard .on{font-weight:700;font-size:14.5px;line-height:1.25}
+.ocard .om{color:var(--muted);font-size:12.5px;line-height:1.35}
+.ocard .op{font-size:13.5px}
+.ocard .ob{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:#1a1206;border-radius:999px;padding:8px 12px;font-weight:700;font-size:14px;text-decoration:none}
+.ocard .ob:hover{filter:brightness(1.08)}
+.pop a.pbtn{background:var(--accent);color:#1a1206;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;text-decoration:none}
 .modes{display:flex;gap:6px}
 .modes button{flex:1;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:8px;padding:7px;cursor:pointer;font-weight:600;font-size:13.5px}
 .modes button[aria-pressed="true"]{background:var(--route);color:#fff;border-color:var(--route)}
@@ -285,6 +292,7 @@ h1.dname{font-family:var(--font-display);font-weight:900;text-transform:uppercas
         <div>
           <h3>Salgo desde</h3>
           <select id="originSel" aria-label="Alojamiento de partida"></select>
+          <div class="ocard" id="originCard" hidden></div>
         </div>
         <div class="modes" role="group" aria-label="Cómo me muevo">
           <button id="modeCar" aria-pressed="true">🚗 En auto</button>
@@ -4302,7 +4310,7 @@ function popAloj(a, i){
   if(a.approx) box.appendChild(el("p","pm","Ubicación aproximada (Airbnb)"));
   const row = el("div","row");
   const go = el("button",null,"Salir desde acá"); go.onclick = ()=>{ setOrigin(i, true); map.closePopup(); };
-  const ln = el("a",null,"Ver en "+a.src+" ↗"); ln.href=a.link; ln.target="_blank"; ln.rel="noopener";
+  const ln = el("a","pbtn","Abrir en "+a.src+" ↗"); ln.href=a.link; ln.target="_blank"; ln.rel="noopener";
   row.append(go, ln); box.appendChild(row);
   return box;
 }
@@ -4354,13 +4362,23 @@ function renderMap(){
   const sel = $("originSel"); sel.textContent="";
   mAloj.forEach((a,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=a.name+" · "+usd(a.tot)+" pp"+(a.zone?" · "+a.zone:""); sel.appendChild(o); });
   if(!mAloj.length){ const o=document.createElement("option"); o.textContent="Sin alojamientos cargados para esta zona"; sel.appendChild(o); }
-  mOrigin = mAloj.length ? 0 : null;
+  mOrigin = mAloj.length ? 0 : null; renderOriginCard();
   $("routeBox").innerHTML = '<p class="route-empty">Tocá cualquier punto del mapa o de la lista para ver el recorrido.</p>';
   setTimeout(()=>{ map.invalidateSize(); drawMarkers(true); loadDistances(); },60);
 }
 
+function renderOriginCard(){
+  const c = $("originCard"); c.textContent = "";
+  const a = mOrigin!=null ? mAloj[mOrigin] : null;
+  c.hidden = !a; if(!a) return;
+  c.append(el("div","on",a.name),
+    el("div","om",[a.src, a.det, a.rate && a.rate!=="Sin reseñas" ? "★ "+a.rate : "sin reseñas", a.zone].filter(Boolean).join(" · ")),
+    el("div","op",usd(a.price)+" el alojamiento · "+usd(a.tot)+" por persona con auto"));
+  const ln = el("a","ob","Abrir en "+a.src+" ↗"); ln.href=a.link; ln.target="_blank"; ln.rel="noopener";
+  c.appendChild(ln);
+}
 function setOrigin(i, redraw){
-  mOrigin = i; $("originSel").value = i;
+  mOrigin = i; $("originSel").value = i; renderOriginCard();
   if(redraw){ drawMarkers(false); map.panTo(mAloj[i].ll); }
   loadDistances();
   if(mTarget) routeTo(mTarget); else routeLayer.clearLayers();
