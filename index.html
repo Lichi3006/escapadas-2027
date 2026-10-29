@@ -51,6 +51,10 @@ button{font:inherit;color:inherit}
 .sub{border-top:1px solid var(--line)}
 .sub-row{display:flex;align-items:center;gap:8px;padding-block:8px;overflow-x:auto;scrollbar-width:none}
 .sub-row::-webkit-scrollbar{display:none}
+.regions,.sub-row{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-padding-inline:24px}
+.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 44px),transparent)}
+.more-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 44px);mask-image:linear-gradient(to right,transparent,#000 44px)}
+.more-l.more-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 44px,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to right,transparent,#000 44px,#000 calc(100% - 44px),transparent)}
 .sub-label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:6px;white-space:nowrap}
 .dest{flex:none;border:1px solid var(--line);background:transparent;padding:6px 14px;border-radius:999px;cursor:pointer;font-size:14px;white-space:nowrap}
 .dest:hover{border-color:var(--muted)}
@@ -215,12 +219,16 @@ h1.dname{font-family:var(--font-display);font-weight:900;text-transform:uppercas
   .keys{display:none}
   .arrow{width:42px;height:42px}
   .arrow.prev{left:8px}.arrow.next{right:8px}
-  .overlay{padding:18px}
+  .stage{height:auto;min-height:clamp(400px,70vh,620px);display:flex;flex-direction:column;justify-content:flex-end}
+  .stage>.arrow{top:84px}
+  h1.dname{font-size:clamp(34px,10.5vw,44px)}
+  .overlay{position:relative;padding:124px 18px 18px}
   .dnav{width:100%}
   .dnav .btn{flex:1;justify-content:center}
   .lb-stage{padding:0 8px}
   .lb .arrow{top:auto;bottom:-56px;transform:none}
   .block-head h2{font-size:28px}
+  .map{height:min(440px,58vh)}
   .block-head .hint{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -4074,7 +4082,14 @@ function renderNav(){
     b.setAttribute("aria-current", i===cur ? "true":"false");
     b.onclick = ()=>go(i);
     sn.appendChild(b);
+    if(i===cur) requestAnimationFrame(()=>{ const r=b.getBoundingClientRect(), o=sn.getBoundingClientRect(); sn.scrollBy({left:(r.left+r.width/2)-(o.left+o.width/2),behavior:"smooth"}); });
   });
+  [rn, sn].forEach(edgeFade);
+}
+function edgeFade(e){
+  const upd = ()=>{ const max = e.scrollWidth - e.clientWidth; e.classList.toggle("more-l", e.scrollLeft > 4); e.classList.toggle("more-r", e.scrollLeft < max - 4); };
+  if(!e._fade){ e._fade = upd; e.addEventListener("scroll", upd, {passive:true}); window.addEventListener("resize", upd); }
+  upd(); setTimeout(upd, 450);
 }
 
 function renderHeroText(){
